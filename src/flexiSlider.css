@@ -4,8 +4,7 @@
 .flexi-slider *:before { font-family:sans-serif; }
 .flexi-slider { width:100%; display:flex; flex-direction:row; flex-grow:1; position:relative; 
                 overflow:hidden; opacity:0; transition: opacity 0.5s ease-out; }
-.flexi-slides { transition: transform 0.5s ease-in-out; width:100%; display:flex; flex-direction:row; }
-.flexi-slides.flexi-resizing { transition: none !important; }
+.flexi-slides { width:100%; display:flex; flex-direction:row; }
 .flexi-slide { flex:1 0 100%; width:100%; display:flex;  }
 .flexi-slider nav { position:absolute; bottom:0; left:0; right:0; top:0; display:flex; overflow:hidden; pointer-events:none; }
 .flexi-slider nav b { background:transparent; flex-basis:10%; cursor:pointer;

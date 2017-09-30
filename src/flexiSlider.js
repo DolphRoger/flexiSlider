@@ -45,7 +45,6 @@
   let Vars = {
     container: null, //outer container
     $container: null, //outer container (jquery)
-    containerId: null, //id for the container - if there is none, it will be generated
     containerWidth: null, //current outer container width
     $slides: null, //slides container
     $slide: null, //collection of slides
@@ -60,6 +59,10 @@
     slideLayout: {}, //the current slide layout set. consists of "group", "scroll" and "margin"
     slideLayouts: [], //array of settings for optionally responsive slides layout
     slideLayoutsIndex: -1, //last index of (responsive) layout set
+    sliderStyle: null,
+    slidesStyle: null,
+    slideStyle: null,
+    styleSheet: null,
     clickTimer: null, //timerid for debouncing clicks on the navigation
     resizeTimer: null, //timerid for debouncing resize events
     resizeEvents: 'resize.flexi orientationchange.flexi' //resize events bound to window when 
@@ -75,10 +78,30 @@
     initialize: function (element, settings) {
       this.$container = element;
       this.container = element[0];
-      this.log(element[0], settings);
+      if (!this.container.id) {
+        this.container.id = 'fs-' + Math.random().toString(36).substr(2, 10);
+      }
+      this.initStyles(settings);
       this.set(settings);
       this.log(this);
       return this;
+    },
+    
+    initStyles: function(settings) {
+      var style = document.createElement('style');
+      style.appendChild(document.createTextNode(''));
+      document.head.appendChild(style);
+      this.styleSheet = style.sheet;
+      var ruleIndex = 0; 
+      $.map({
+        slider: '',
+        slides: settings.slides,
+        slide: settings.slide
+      }, (function(prop, key) {
+        this.styleSheet.insertRule('#' + this.container.id + ' ' + prop + ' { }', ruleIndex);
+        this[key+'Style'] = this.styleSheet.cssRules[ruleIndex++].style;
+      }).bind(this));
+      this.slidesStyle.transition = 'transform 0.5s ease-in-out';
     },
     /**
      * Set an option value
@@ -159,14 +182,10 @@
         calc = '(' + calc + ' - ' + ((this.slideMargin / this.slideGroup) * (this.slideGroup - 1)) + this.slideMarginUnit + ')';
       }
       this.slideWidthCalc = calc; //store for later reuse
-      var slideCSS = {
-        flex: '0 0 calc(' + calc + ')', //use calculated widths not pixels for better fit and less need to update the DOM
-        margin: '0 ' + (this.slideMargin / 2) + this.slideMarginUnit //add margin to slides
-      };
-      this.log('setting slides CSS', 'flex:', slideCSS.flex, 'margin:', slideCSS.margin);
-      this.$slide.css(slideCSS); //assign new css styles to slides
+      this.slideStyle.flex = '0 0 calc(' + calc + ')'; //use calculated widths not pixels for better fit and less need to update the DOM
+      this.slideStyle.margin = '0 ' + (this.slideMargin / 2) + this.slideMarginUnit; //add margin to slides
       this.updatePosition(false); //update the transformation of the slides container according to current position - without animation
-      this.$container.css({opacity: 1}); //show the slider with animation after load for nicer loading behavior
+      this.sliderStyle.opacity = 1; //show the slider with animation after load for nicer loading behavior
     },
     updateResize: function () {
       if ((this.containerWidth = this.container.offsetWidth) > 0) { //store current width, but do not update slides when the container has no width (like display:none) to avoid flicker
@@ -199,21 +218,19 @@
       } else { //at the beginning and no margin: left position is 0
         calc += '0';
       }
-      var styles = {//new slides container styles
-        transform: 'translate3d(' + calc + '),0,0)' //translation by shifting calculated to the left
-      };
+      var slidesTransform = 'translate3d(' + calc + '),0,0)'; //new slides container styles
       if (animate === false) { //set styles with transform transition disabled
         //force the browser to repaint after setting the resizing class 
         //using setTimeout with small timeout, otherwise it is always animated
-        this.$slides.addClass('flexi-resizing'); //disable transitions on container with css class
+        this.slidesStyle.transition = 'none'; //disable transitions on container with css class
         window.setTimeout((function () { //repaint
-          this.$slides.css(styles); //set new slides position
+          this.slidesStyle.transform = slidesTransform;  //translation by shifting calculated to the left
           window.setTimeout((function () { //repaint
-            this.$slides.removeClass('flexi-resizing'); //re-enable transitions on container
-          }).bind(this), 42);
-        }).bind(this), 42);
+            this.slidesStyle.transition = this.get('scrollTransition'); //re-enable transitions on container
+          }).bind(this), 142);
+        }).bind(this), 142);
       } else { //set styles with transform transition enabled
-        this.$slides.css(styles); //set styles animated
+        this.slidesStyle.transform = slidesTransform; //set styles animated
       }
     }
   };
@@ -314,6 +331,9 @@
         }
         this.slidePos = 0;
       },
+      scrollTransition: function(value) {
+        this.slidesStyle.transition = value.new;
+      },
       navigationTemplate: function (value) {
         if (!this.$navigation || value.old !== value.new) {
           if (this.$navigation) {
@@ -368,13 +388,19 @@
     log: function () {} //empty debug function, will be overriden with Debug::log when debug=true
   };
 
+  /**
+   * Debug object, extends slider when debug = true
+   */
   let Debug = {
+    /**
+     * Log a message to console and apply all arguments
+     */
     log: function () {
-      if (window.console && console.log) {
-        var args = Array.prototype.slice.call(arguments, 0);
-        args.unshift(':: ' + (new Error()).stack.split("\n")[1].split('@')[0] + '()');
-        args.unshift('flexiSlider');
-        console.log.apply(console, args);
+      if (window.console && console.log) { //ensure console is available
+        var args = Array.prototype.slice.call(arguments, 0); //convert arguments to array
+        args.unshift(':: ' + (new Error()).stack.split("\n")[1].split('@')[0] + '()'); //log calling function name
+        args.unshift('flexiSlider'); //add custom caption to spot debug output
+        console.log.apply(console, args); //apply to native console log method
       }
     }
   };
@@ -390,7 +416,7 @@
   //defaults for settings which can be changed after initializaition by calling $(..).flexiSlider('name of setting', value)
   let RuntimeDefaults = {
     debug: true,
-    clickDebounceTimeout: 250,
+    clickDebounceTimeout: 250, //ms to debounce the clicks on the navigation
     layout: [
       {//standard layout with no width set is mandatory
         group: 1, //how many slides to show at once
@@ -398,9 +424,10 @@
         margin: 0 //margin bewtween the slides (1em, 10px, 5.5%, ...). Defaults to px when it is a number without unit.
       }
     ],
-    resizeDebounceTimeout: 100,
-    watchElementInterval: 100,
-    watchElementResize: false
+    scrollTransition: '0.5s ease-in-out',
+    resizeDebounceTimeout: 100, //ms to debounce the resize event
+    watchElementInterval: 100, //ms in between the ticks to check for container resize, when watchElementResize=true
+    watchElementResize: false //
   };
 
 })(jQuery);
