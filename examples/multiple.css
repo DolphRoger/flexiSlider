@@ -1,0 +1,4 @@
+*, *:before, *:after { box-sizing:border-box; margin:0; padding:0; font-family: sans-serif; }
+div.multiple { max-width:960px; min-width:320px; border:1px dashed #ccc; margin:3em auto; }
+div.flexi-slides {  max-height:250px; }
+div.mydiv { overflow:hidden; overflow-y:auto; }
