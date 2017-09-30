@@ -1,2 +1,2 @@
 # flexiSlider
-Flex layout based slider with no strings attached
+Flex layout based slider with no strings attached.
