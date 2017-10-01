@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>flexiSlider example: multiple boxes</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="multiple.css" rel="stylesheet" type="text/css"/>
+    <link href="../src/flexiSlider.css" rel="stylesheet" type="text/css"/>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="../src/flexiSlider.js"></script>    
+    <script>
+      $(function () {
+        $('div.flexi-slider').flexiSlider({
+          layout: [{
+              group: 1,
+              scroll: 1,
+              margin: '1rem'
+            },{ 
+              width: 480,
+              group: 2,
+              scroll: 1,
+              margin: '0.8rem'
+            },{
+              width: 650,
+              group: 3,
+              scroll: 1,
+              margin: '1rem'
+            },{
+              width: 960,
+              group: 4,
+              scroll: 1,
+              margin: '1rem'
+            }]
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <div class="multiple">
+      <div class="flexi-slider">
+        <div class="flexi-slides">
+          <div class="flexi-slide">
+            <div class="my-slide">
+              <div class="text">
+                <h1>1</h1>
+              </div>
+            </div>
+          </div><!--single slide container-->
+          <div class="flexi-slide">
+            <div class="my-slide">
+              <div class="text">
+                <h1>2</h1>
+              </div>
+            </div>
+          </div><!--single slide container-->
+          <div class="flexi-slide">
+            <div class="my-slide">
+              <div class="text">
+                <h1>3</h1>
+              </div>
+            </div>
+          </div><!--single slide container-->
+          <div class="flexi-slide">
+            <div class="my-slide">
+              <div class="text">
+                <h1>4</h1>
+              </div>
+            </div>
+          </div><!--single slide container-->
+          <div class="flexi-slide">
+            <div class="my-slide">
+              <div class="text">
+                <h1>5</h1>
+              </div>
+            </div>
+          </div><!--single slide container-->
+          <div class="flexi-slide">
+            <div class="my-slide">
+              <div class="text">
+                <h1>6</h1>
+              </div>
+            </div>
+          </div><!--single slide container-->
+          <div class="flexi-slide">
+            <div class="my-slide">
+              <div class="text">
+                <h1>7</h1>
+              </div>
+            </div>
+          </div><!--single slide container-->
+          <div class="flexi-slide">
+            <div class="my-slide">
+              <div class="text">
+                <h1>8</h1>
+              </div>
+            </div>
+          </div><!--single slide container-->
+          <div class="flexi-slide">
+            <div class="my-slide">
+              <div class="text">
+                <h1>9</h1>
+              </div>
+            </div>
+          </div><!--single slide container-->
+        </div><!--inner scrolling slides container-->
+      </div><!--outer slider container-->
+      <nav class="flexi-pager">
+        <a></a><a></a><a></a><a></a><a></a><a></a>
+      </nav>
+    </div>
+  </body>
+</html>

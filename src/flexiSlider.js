@@ -50,7 +50,8 @@
     $slide: null, //collection of slides
     $navigation: null, //slider navigation element (dynamically added)
     slideCount: 0, //how many elements of slide are found
-    slidePos: 0, //current scrolling position (element index)
+    slidePos: 0, //current scrolling position possible to show (element index)
+    slideNavPos: 0, //current scrolling position navigated to (element index)
     slideScroll: 0, //how many elements to scroll with one event
     slideGroup: 0, //how many items to show at once
     slideMargin: 0, //amount of margin between the boxes, number only 
@@ -59,10 +60,10 @@
     slideLayout: {}, //the current slide layout set. consists of "group", "scroll" and "margin"
     slideLayouts: [], //array of settings for optionally responsive slides layout
     slideLayoutsIndex: -1, //last index of (responsive) layout set
-    sliderStyle: null,
-    slidesStyle: null,
-    slideStyle: null,
-    styleSheet: null,
+    sliderStyle: null, //style object of the slider css rule
+    slidesStyle: null, //style object of the slides container css rule
+    slideStyle: null, //style object of the slide elements css rule
+    styleSheet: null, //style DOM object
     clickTimer: null, //timerid for debouncing clicks on the navigation
     resizeTimer: null, //timerid for debouncing resize events
     resizeEvents: 'resize.flexi orientationchange.flexi' //resize events bound to window when 
@@ -73,41 +74,43 @@
      * Initialize the slider on container 
      * @param {type} element
      * @param {type} settings
-     * @returns {flexiSliderL#5.Interface}
      */
     initialize: function (element, settings) {
-      this.$container = element;
-      this.container = element[0];
-      if (!this.container.id) {
-        this.container.id = 'fs-' + Math.random().toString(36).substr(2, 10);
-      }
-      this.initStyles(settings);
-      this.set(settings);
+      this.$container = element; //save jQuery reference to the container
+      this.container = element[0]; //link to plain DOM container object
+      this.initStyles(settings); //initialize style sheets
+      this.set(settings); //set all initial settings
       this.log(this);
-      return this;
+      return this; //keep chain
     },
-    
-    initStyles: function(settings) {
-      var style = document.createElement('style');
-      style.appendChild(document.createTextNode(''));
-      document.head.appendChild(style);
-      this.styleSheet = style.sheet;
-      var ruleIndex = 0; 
-      $.map({
-        slider: '',
-        slides: settings.slides,
-        slide: settings.slide
-      }, (function(prop, key) {
-        this.styleSheet.insertRule('#' + this.container.id + ' ' + prop + ' { }', ruleIndex);
-        this[key+'Style'] = this.styleSheet.cssRules[ruleIndex++].style;
-      }).bind(this));
-      this.slidesStyle.transition = 'transform 0.5s ease-in-out';
+    /**
+     * Initialize style sheet node and set initial rules
+     * @param {type} settings
+     */
+    initStyles: function (settings) {
+      if (!this.styleSheet) { //initialize only once
+        if (!this.container.id) { //check if there is a container id set
+          this.container.id = 'fs-' + Math.random().toString(36).substr(2, 10); //set unique id on container
+        }
+        var style = document.createElement('style'); //create new style node
+        style.appendChild(document.createTextNode('')); //fix for webkit
+        document.head.appendChild(style); //append the style node to head
+        this.styleSheet = style.sheet; //link to style sheet of the newly created node
+        var ruleIndex = 0; //current rule index
+        $.map({
+          slider: '', //rule for slider container
+          slides: settings.slides, //rule for slides container
+          slide: settings.slide //rule for single slides
+        }, (function (prop, key) {
+          this.styleSheet.insertRule('#' + this.container.id + ' ' + prop + ' { }', ruleIndex); //insert new style rule
+          this[key + 'Style'] = this.styleSheet.cssRules[ruleIndex++].style; //save reference to style property for later manipulation
+        }).bind(this));
+      }
     },
     /**
      * Set an option value
      * @param {type} name
      * @param {type} value
-     * @returns {undefined}
      */
     set: function (name, value) {
       this.log('setting options', name, value);
@@ -142,8 +145,8 @@
      * @returns value of current setting or the default value if undefined
      */
     get: function (name, defaultValue) {
-      var settings = this.$container.data('flexi.settings');
-      return settings[name] !== undefined ? settings[name] : defaultValue;
+      var settings = this.$container.data('flexi.settings'); //get saved settings from dataset
+      return settings[name] !== undefined ? settings[name] : defaultValue; //return default when no value set
     },
     next: function (animate) {
       if (this.slidePos < this.slideCount - this.slideGroup) {
@@ -206,6 +209,9 @@
       if (!this.container.offsetWidth) { //no offsetWidth means the container is not visible
         return; //do not update transformation when the container is not visible, this results in flicker
       }
+//      if (this.slidePos > this.slideCount - this.slideGroup) { //adjust slide position
+//        this.slidePos = this.slideCount - this.slideGroup; //note: when resizing, this may loose the position
+//      }
       var calc = 'calc(', //build formula for positioning the slides container this.$slides / .flexi-slides
               margin = this.slideMargin ? this.slideMargin + this.slideMarginUnit : ''; //current margin
       if (this.slidePos) { //slide position is not at the beginning
@@ -215,8 +221,8 @@
         }
       } else if (margin) { //at the beginning: shift slides half margin to left
         calc += '-' + margin + ' / 2';
-      } else { //at the beginning and no margin: left position is 0
-        calc += '0';
+      } else { //at the beginning and no margin 
+        calc += '0'; //left position is 0
       }
       var slidesTransform = 'translate3d(' + calc + '),0,0)'; //new slides container styles
       if (animate === false) { //set styles with transform transition disabled
@@ -296,7 +302,7 @@
         if (!$.isArray(value.new) || !value.new.length) {
           Debug.log('ERROR', 'Wrong layouts set, falling back to defaults. Need a valid array. Value passed:', value, value.new.length);
           value.new = RuntimeDefaults.layout;
-        } 
+        }
         value.new.sort(function (a, b) {
           return (a.width ? a.width : 0) > (b.width ? b.width : 0) ? 1 : -1;
         });
@@ -309,8 +315,8 @@
           }
           fromPx = ro.width ? ro.width : 0;
           toPx = (r < value.new.length - 1 ? value.new[r + 1].width - 1 : Infinity);
-          slideLayout = { 
-            fromPx: fromPx, 
+          slideLayout = {
+            fromPx: fromPx,
             toPx: toPx
           };
           for (layoutProperty in RuntimeDefaults.layout[0]) {
@@ -331,8 +337,8 @@
         }
         this.slidePos = 0;
       },
-      scrollTransition: function(value) {
-        this.slidesStyle.transition = value.new;
+      scrollTransition: function (value) {
+        this.slidesStyle.transition = (value.new !== 'none' && value.new) ? 'transform ' + value.new : 'none';
       },
       navigationTemplate: function (value) {
         if (!this.$navigation || value.old !== value.new) {
@@ -424,6 +430,7 @@
         margin: 0 //margin bewtween the slides (1em, 10px, 5.5%, ...). Defaults to px when it is a number without unit.
       }
     ],
+    rewindAtEnd: true,
     scrollTransition: '0.5s ease-in-out',
     resizeDebounceTimeout: 100, //ms to debounce the resize event
     watchElementInterval: 100, //ms in between the ticks to check for container resize, when watchElementResize=true
